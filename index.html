@@ -76,12 +76,10 @@
     const ctx = canvas.getContext("2d");
     let cities = [];
 
-    // Function to log messages
     function log(msg) {
       document.getElementById("log").innerHTML += msg + "<br>";
     }
 
-    // Generate random city locations
     function generateCities() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       cities = [];
@@ -103,25 +101,22 @@
       });
 
       document.getElementById("log").innerHTML = "<b>System Log:</b><br>";
-      log(Generated ${num} delivery locations.);
+      log(`Generated ${num} delivery locations.`);
     }
 
-    // Distance between two points
     function distance(a, b) {
       return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
     }
 
-    // Total route distance
     function totalDistance(path) {
       let d = 0;
       for (let i = 0; i < path.length - 1; i++) {
         d += distance(cities[path[i]], cities[path[i + 1]]);
       }
-      d += distance(cities[path[path.length - 1]], cities[path[0]]); // return to start
+      d += distance(cities[path[path.length - 1]], cities[path[0]]); 
       return d;
     }
 
-    // Travelling Salesman Problem (Brute Force)
     function solveTSP() {
       if (cities.length < 3) {
         log("Please generate at least 3 cities first.");
@@ -154,8 +149,6 @@
       drawRoute(bestPath);
       displayResults(bestPath, minDist);
     }
-
-    // Draw optimized route
     function drawRoute(path) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
@@ -177,19 +170,18 @@
       });
     }
 
-    // Display final results (distance, fuel, time)
     function displayResults(path, distanceKm) {
-      const fuelEfficiency = 5; // km per litre
-      const avgSpeed = 40; // km per hour
+      const fuelEfficiency = 5; 
+      const avgSpeed = 40; 
 
       const fuelRequired = (distanceKm / fuelEfficiency).toFixed(2);
       const timeHours = (distanceKm / avgSpeed).toFixed(2);
       const timeMinutes = (timeHours * 60).toFixed(1);
 
-      log(<b>Optimized Route:</b> ${path.map(i => i + 1).join(" → ")} → ${path[0] + 1});
-      log(<b>Total Distance:</b> ${distanceKm.toFixed(2)} km);
-      log(<b>Fuel Required:</b> ${fuelRequired} litres (at 5 km/l));
-      log(<b>Estimated Time:</b> ${timeHours} hrs (~${timeMinutes} minutes));
+      log(`<b>Optimized Route:</b> ${path.map(i => i + 1).join(" → ")} → ${path[0] + 1}`);
+      log(`<b>Total Distance:</b> ${distanceKm.toFixed(2)} km`);
+      log(`<b>Fuel Required:</b> ${fuelRequired} litres (at 5 km/l)`);
+      log(`<b>Estimated Time:</b> ${timeHours} hrs (~${timeMinutes} minutes)`);
     }
   </script>
 </body>
