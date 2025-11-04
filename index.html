@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TSP Delivery Optimizer</title>
+  <title>TSP Delivery Optimizer (DP - Held Karp)</title>
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #fdfdfd;
+      background: #f6f9fc;
       margin: 0;
       padding: 0;
       display: flex;
@@ -17,7 +17,7 @@
     }
 
     header {
-      background-color: #faef4d;
+      background-color: #0066cc;
       color: white;
       width: 100%;
       text-align: center;
@@ -39,7 +39,7 @@
     }
 
     #mapCanvas {
-      border: 2px solid #54b639;
+      border: 2px solid #0066cc;
       background: white;
       width: 600px;
       height: 400px;
@@ -48,8 +48,8 @@
     #log {
       margin-top: 20px;
       width: 600px;
-      background: #fafafa;
-      border: 1px solid #ffffff;
+      background: #eef3f8;
+      border: 1px solid #ccc;
       padding: 10px;
       font-size: 0.95em;
       height: 180px;
@@ -58,11 +58,11 @@
   </style>
 </head>
 <body>
-  <header>E-Commerce Delivery Route Optimizer (TSP + Fuel & Time)</header>
+  <header>E-Commerce Delivery Optimizer (DP TSP + Fuel & Time)</header>
 
   <div id="controls">
     <label>Number of Cities: </label>
-    <input type="number" id="numCities" min="3" max="8" value="5" />
+    <input type="number" id="numCities" min="3" max="10" value="5" />
     <button onclick="generateCities()">Generate</button>
     <button onclick="solveTSP()">Optimize Route</button>
   </div>
@@ -108,47 +108,72 @@
       return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
     }
 
-    function totalDistance(path) {
-      let d = 0;
-      for (let i = 0; i < path.length - 1; i++) {
-        d += distance(cities[path[i]], cities[path[i + 1]]);
-      }
-      d += distance(cities[path[path.length - 1]], cities[path[0]]); 
-      return d;
-    }
-
     function solveTSP() {
       if (cities.length < 3) {
         log("Please generate at least 3 cities first.");
         return;
       }
 
-      let n = cities.length;
-      let indices = [...Array(n).keys()];
-      let bestPath = [...indices];
-      let minDist = Infinity;
+      const n = cities.length;
+      const dist = Array.from({ length: n }, () => Array(n).fill(0));
 
-      function permute(arr, l, r) {
-        if (l === r) {
-          let dist = totalDistance(arr);
-          if (dist < minDist) {
-            minDist = dist;
-            bestPath = [...arr];
-          }
-        } else {
-          for (let i = l; i <= r; i++) {
-            [arr[l], arr[i]] = [arr[i], arr[l]];
-            permute(arr, l + 1, r);
-            [arr[l], arr[i]] = [arr[i], arr[l]];
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          dist[i][j] = distance(cities[i], cities[j]);
+        }
+      }
+
+      const size = 1 << n;
+      const dp = Array.from({ length: size }, () => Array(n).fill(Infinity));
+      const parent = Array.from({ length: size }, () => Array(n).fill(-1));
+
+      dp[1][0] = 0; 
+
+      for (let mask = 1; mask < size; mask++) {
+        for (let u = 0; u < n; u++) {
+          if (!(mask & (1 << u))) continue;
+          for (let v = 0; v < n; v++) {
+            if (mask & (1 << v)) continue;
+            const nextMask = mask | (1 << v);
+            const newDist = dp[mask][u] + dist[u][v];
+            if (newDist < dp[nextMask][v]) {
+              dp[nextMask][v] = newDist;
+              parent[nextMask][v] = u;
+            }
           }
         }
       }
 
-      permute(indices, 0, n - 1);
+      let endMask = size - 1;
+      let minDist = Infinity;
+      let lastCity = -1;
 
-      drawRoute(bestPath);
-      displayResults(bestPath, minDist);
+      for (let i = 1; i < n; i++) {
+        const curDist = dp[endMask][i] + dist[i][0];
+        if (curDist < minDist) {
+          minDist = curDist;
+          lastCity = i;
+        }
+      }
+
+      const path = [];
+      let mask = endMask;
+      let curr = lastCity;
+
+      while (curr !== -1) {
+        path.push(curr);
+        const temp = parent[mask][curr];
+        mask ^= 1 << curr;
+        curr = temp;
+      }
+
+      path.push(0);
+      path.reverse();
+
+      drawRoute(path);
+      displayResults(path, minDist);
     }
+
     function drawRoute(path) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
@@ -173,14 +198,13 @@
     function displayResults(path, distanceKm) {
       const fuelEfficiency = 5; 
       const avgSpeed = 40; 
-
       const fuelRequired = (distanceKm / fuelEfficiency).toFixed(2);
       const timeHours = (distanceKm / avgSpeed).toFixed(2);
       const timeMinutes = (timeHours * 60).toFixed(1);
 
-      log(`<b>Optimized Route:</b> ${path.map(i => i + 1).join(" → ")} → ${path[0] + 1}`);
+      log(`<b>Optimal Route (DP):</b> ${path.map(i => i + 1).join(" → ")} → ${path[0] + 1}`);
       log(`<b>Total Distance:</b> ${distanceKm.toFixed(2)} km`);
-      log(`<b>Fuel Required:</b> ${fuelRequired} litres (at 5 km/l)`);
+      log(`<b>Fuel Required:</b> ${fuelRequired} litres`);
       log(`<b>Estimated Time:</b> ${timeHours} hrs (~${timeMinutes} minutes)`);
     }
   </script>
