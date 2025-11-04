@@ -4,18 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TSP Delivery Optimizer</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f6f9fc;
+      background: #fdfdfd;
       margin: 0;
       padding: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
+
     header {
-      background-color: #0066cc;
+      background-color: #faef4d;
       color: white;
       width: 100%;
       text-align: center;
@@ -23,37 +25,40 @@
       font-size: 1.5em;
       font-weight: bold;
     }
+
     #controls {
       margin: 20px;
       text-align: center;
     }
+
     #controls input {
       padding: 5px;
       font-size: 1em;
       width: 50px;
       text-align: center;
     }
+
     #mapCanvas {
-      border: 2px solid #0066cc;
+      border: 2px solid #54b639;
       background: white;
       width: 600px;
       height: 400px;
     }
+
     #log {
       margin-top: 20px;
       width: 600px;
-      background: #eef3f8;
-      border: 1px solid #ccc;
+      background: #fafafa;
+      border: 1px solid #ffffff;
       padding: 10px;
       font-size: 0.95em;
-      height: 150px;
+      height: 180px;
       overflow-y: auto;
     }
   </style>
 </head>
 <body>
-
-  <header>E-Commerce Delivery Route Optimizer (TSP Only)</header>
+  <header>E-Commerce Delivery Route Optimizer (TSP + Fuel & Time)</header>
 
   <div id="controls">
     <label>Number of Cities: </label>
@@ -71,10 +76,12 @@
     const ctx = canvas.getContext("2d");
     let cities = [];
 
+    // Function to log messages
     function log(msg) {
       document.getElementById("log").innerHTML += msg + "<br>";
     }
 
+    // Generate random city locations
     function generateCities() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       cities = [];
@@ -87,7 +94,6 @@
         });
       }
 
-      // Draw cities
       ctx.fillStyle = "#ff3366";
       cities.forEach((c, i) => {
         ctx.beginPath();
@@ -96,13 +102,16 @@
         ctx.fillText(i + 1, c.x + 8, c.y - 8);
       });
 
-      log(`Generated ${num} delivery locations.`);
+      document.getElementById("log").innerHTML = "<b>System Log:</b><br>";
+      log(Generated ${num} delivery locations.);
     }
 
+    // Distance between two points
     function distance(a, b) {
       return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
     }
 
+    // Total route distance
     function totalDistance(path) {
       let d = 0;
       for (let i = 0; i < path.length - 1; i++) {
@@ -112,7 +121,7 @@
       return d;
     }
 
-    // Simple TSP brute-force search (for small n)
+    // Travelling Salesman Problem (Brute Force)
     function solveTSP() {
       if (cities.length < 3) {
         log("Please generate at least 3 cities first.");
@@ -143,14 +152,12 @@
       permute(indices, 0, n - 1);
 
       drawRoute(bestPath);
-      log(`Shortest route found: ${bestPath.map(i => i + 1).join(" → ")} → ${bestPath[0] + 1}`);
-      log(`Total Distance: ${minDist.toFixed(2)} units`);
+      displayResults(bestPath, minDist);
     }
 
+    // Draw optimized route
     function drawRoute(path) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw path
       ctx.beginPath();
       ctx.moveTo(cities[path[0]].x, cities[path[0]].y);
       for (let i = 1; i < path.length; i++) {
@@ -161,7 +168,6 @@
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Draw cities again
       ctx.fillStyle = "#ff3366";
       cities.forEach((c, i) => {
         ctx.beginPath();
@@ -169,6 +175,21 @@
         ctx.fill();
         ctx.fillText(i + 1, c.x + 8, c.y - 8);
       });
+    }
+
+    // Display final results (distance, fuel, time)
+    function displayResults(path, distanceKm) {
+      const fuelEfficiency = 5; // km per litre
+      const avgSpeed = 40; // km per hour
+
+      const fuelRequired = (distanceKm / fuelEfficiency).toFixed(2);
+      const timeHours = (distanceKm / avgSpeed).toFixed(2);
+      const timeMinutes = (timeHours * 60).toFixed(1);
+
+      log(<b>Optimized Route:</b> ${path.map(i => i + 1).join(" → ")} → ${path[0] + 1});
+      log(<b>Total Distance:</b> ${distanceKm.toFixed(2)} km);
+      log(<b>Fuel Required:</b> ${fuelRequired} litres (at 5 km/l));
+      log(<b>Estimated Time:</b> ${timeHours} hrs (~${timeMinutes} minutes));
     }
   </script>
 </body>
